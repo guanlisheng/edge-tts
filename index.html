@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本转语音工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>文本转语音工具</h1>
+        <p class="description">使用浏览器内置的语音合成功能将文本转换为自然语音，无需服务器支持</p>
+    </header>
+
+    <div class="container">
+        <div class="input-section">
+            <label for="text-input">输入要转换为语音的文本：</label>
+            <textarea id="text-input" placeholder="请输入要转换为语音的文本...">Welcome to the Text-to-Speech tool. This is a pure frontend implementation based on the Web Speech API that runs directly in the browser.</textarea>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="language-select">语言：</label>
+                <select id="language-select">
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="gender-select">性别：</label>
+                <select id="gender-select">
+                    <option value="any">Any</option>
+                    <option value="female" selected>Female</option>
+                    <option value="male">Male</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="voice-select">语音：</label>
+                <select id="voice-select">
+                    <option value="">Loading voices...</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="rate">语速：<span id="rate-value" class="range-value">1</span></label>
+                <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="pitch">音调：<span id="pitch-value" class="range-value">1</span></label>
+                <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="volume">音量：<span id="volume-value" class="range-value">1</span></label>
+                <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="btn-play" class="btn-play">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                播放
+            </button>
+            <button id="btn-pause" class="btn-pause" disabled>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+                暂停
+            </button>
+            <button id="btn-stop" class="btn-stop" disabled>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M6 6h12v12H6z"/>
+                </svg>
+                停止
+            </button>
+        </div>
+
+        <div id="status" class="status">准备就绪</div>
+        
+        <!-- 添加浏览器支持检测 -->
+        <div id="browser-support" class="browser-support hidden">
+            <p>⚠️ 您的浏览器可能不完全支持语音合成功能，或者需要用户交互才能激活。</p>
+            <p>请尝试点击页面任意位置后重试。</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>基于Web Speech API构建 | 部署在GitHub Pages上</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
