@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnPlay = document.getElementById('btn-play');
     const btnPause = document.getElementById('btn-pause');
     const btnStop = document.getElementById('btn-stop');
+    const btnPlayMobile = document.getElementById('btn-play-mobile');
+    const btnPauseMobile = document.getElementById('btn-pause-mobile');
+    const btnStopMobile = document.getElementById('btn-stop-mobile');
     const status = document.getElementById('status');
     const browserSupport = document.getElementById('browser-support');
 
@@ -54,7 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function disableAllControls() {
         const controls = [
             textInput, languageSelect, genderSelect, voiceSelect,
-            rateInput, pitchInput, volumeInput, btnPlay, btnPause, btnStop
+            rateInput, pitchInput, volumeInput, btnPlay, btnPause, btnStop,
+            btnPlayMobile, btnPauseMobile, btnStopMobile
         ];
         controls.forEach(control => {
             if (control) control.disabled = true;
@@ -66,13 +70,16 @@ document.addEventListener('DOMContentLoaded', function() {
         btnPlay.disabled = speaking && !paused;
         btnPause.disabled = !speaking || paused;
         btnStop.disabled = !speaking;
+        btnPlayMobile.disabled = speaking && !paused;
+        btnPauseMobile.disabled = !speaking || paused;
+        btnStopMobile.disabled = !speaking;
         
         if (speaking && !paused) {
-            btnPlay.textContent = '继续';
-            btnPlay.querySelector('.icon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+            btnPlay.innerHTML = '<i class="fas fa-play"></i> 继续';
+            btnPlayMobile.innerHTML = '<i class="fas fa-play"></i>';
         } else {
-            btnPlay.textContent = '播放';
-            btnPlay.querySelector('.icon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+            btnPlay.innerHTML = '<i class="fas fa-play"></i> 播放';
+            btnPlayMobile.innerHTML = '<i class="fas fa-play"></i>';
         }
     }
 
@@ -217,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeValue.textContent = volumeInput.value;
     });
 
-    // 播放语音
-    btnPlay.addEventListener('click', () => {
+    // 播放语音函数
+    function playSpeech() {
         // 在某些浏览器中，需要用户交互后才能播放语音
         if (synth.speaking && synth.paused) {
             synth.resume();
@@ -288,27 +295,39 @@ document.addEventListener('DOMContentLoaded', function() {
             // 显示浏览器支持提示
             browserSupport.classList.remove('hidden');
         }
-    });
+    }
 
-    // 暂停语音
-    btnPause.addEventListener('click', () => {
+    // 暂停语音函数
+    function pauseSpeech() {
         if (synth.speaking && !synth.paused) {
             synth.pause();
             status.textContent = '已暂停';
             status.className = 'status paused';
             updateControlButtons(true, true);
         }
-    });
+    }
 
-    // 停止语音
-    btnStop.addEventListener('click', () => {
+    // 停止语音函数
+    function stopSpeech() {
         if (synth.speaking) {
             synth.cancel();
             status.textContent = '已停止';
             status.className = 'status';
             updateControlButtons(false, false);
         }
-    });
+    }
+
+    // 播放语音
+    btnPlay.addEventListener('click', playSpeech);
+    btnPlayMobile.addEventListener('click', playSpeech);
+
+    // 暂停语音
+    btnPause.addEventListener('click', pauseSpeech);
+    btnPauseMobile.addEventListener('click', pauseSpeech);
+
+    // 停止语音
+    btnStop.addEventListener('click', stopSpeech);
+    btnStopMobile.addEventListener('click', stopSpeech);
 
     // 添加页面点击事件处理，以激活语音合成
     document.addEventListener('click', function initSpeech() {

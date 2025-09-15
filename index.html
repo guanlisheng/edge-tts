@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文本转语音工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,12 +14,37 @@
     </header>
 
     <div class="container">
-        <div class="input-section">
+        <div class="input-section card">
+            <div class="section-title">
+                <i class="fas fa-keyboard"></i>
+                <span>输入文本</span>
+            </div>
             <label for="text-input">输入要转换为语音的文本：</label>
             <textarea id="text-input" placeholder="请输入要转换为语音的文本...">Welcome to the Text-to-Speech tool. This is a pure frontend implementation based on the Web Speech API that runs directly in the browser.</textarea>
         </div>
 
-        <div class="controls">
+        <!-- 将按钮组放在更靠前的位置 -->
+        <div class="button-group">
+            <button id="btn-play" class="btn-play">
+                <i class="fas fa-play"></i>
+                播放
+            </button>
+            <button id="btn-pause" class="btn-pause" disabled>
+                <i class="fas fa-pause"></i>
+                暂停
+            </button>
+            <button id="btn-stop" class="btn-stop" disabled>
+                <i class="fas fa-stop"></i>
+                停止
+            </button>
+        </div>
+
+        <div class="controls card">
+            <div class="section-title">
+                <i class="fas fa-sliders-h"></i>
+                <span>语音设置</span>
+            </div>
+            
             <div class="control-group">
                 <label for="language-select">语言：</label>
                 <select id="language-select">
@@ -59,33 +85,27 @@
             </div>
         </div>
 
-        <div class="button-group">
-            <button id="btn-play" class="btn-play">
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-                播放
-            </button>
-            <button id="btn-pause" class="btn-pause" disabled>
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                </svg>
-                暂停
-            </button>
-            <button id="btn-stop" class="btn-stop" disabled>
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M6 6h12v12H6z"/>
-                </svg>
-                停止
-            </button>
-        </div>
-
         <div id="status" class="status">准备就绪</div>
         
         <!-- 添加浏览器支持检测 -->
         <div id="browser-support" class="browser-support hidden">
             <p>⚠️ 您的浏览器可能不完全支持语音合成功能，或者需要用户交互才能激活。</p>
             <p>请尝试点击页面任意位置后重试。</p>
+        </div>
+    </div>
+
+    <!-- 浮动控制栏用于移动设备 -->
+    <div class="floating-controls">
+        <div class="button-group">
+            <button id="btn-play-mobile" class="btn-play">
+                <i class="fas fa-play"></i>
+            </button>
+            <button id="btn-pause-mobile" class="btn-pause" disabled>
+                <i class="fas fa-pause"></i>
+            </button>
+            <button id="btn-stop-mobile" class="btn-stop" disabled>
+                <i class="fas fa-stop"></i>
+            </button>
         </div>
     </div>
 
