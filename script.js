@@ -20,21 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const synth = window.speechSynthesis;
     let utterance = null;
     let voices = [];
+    let voicesLoaded = false;
 
     // 检查浏览器支持
     if (!synth) {
-        status.textContent = '您的浏览器不支持语音合成功能';
-        status.className = 'status paused';
+        showError('您的浏览器不支持语音合成功能');
         browserSupport.classList.remove('hidden');
-        // 禁用所有控件
-        textInput.disabled = true;
-        languageSelect.disabled = true;
-        genderSelect.disabled = true;
-        voiceSelect.disabled = true;
-        rateInput.disabled = true;
-        pitchInput.disabled = true;
-        volumeInput.disabled = true;
-        btnPlay.disabled = true;
+        disableAllControls();
         return;
     }
 
@@ -43,189 +35,152 @@ document.addEventListener('DOMContentLoaded', function() {
         'en': {
             defaultFemale: 'Microsoft Zira Desktop - English (United States)',
             defaultMale: 'Microsoft David Desktop - English (United States)',
-            voices: [
-                'Microsoft Zira Desktop - English (United States)',
-                'Microsoft David Desktop - English (United States)',
-                'Google US English',
-                'Alex',
-                'Samantha',
-                'Daniel',
-                'Karen',
-                'Moira',
-                'Tessa'
-            ]
+            langCode: 'en-US'
         },
         'zh': {
             defaultFemale: 'Microsoft Huihui Desktop - Chinese (Simplified)',
             defaultMale: 'Microsoft Kangkang Desktop - Chinese (Simplified)',
-            voices: [
-                'Microsoft Huihui Desktop - Chinese (Simplified)',
-                'Microsoft Yaoyao Desktop - Chinese (Simplified)',
-                'Microsoft Kangkang Desktop - Chinese (Simplified)',
-                'Ting-Ting',
-                'Sin-ji',
-                'Google 普通话（中国大陆）'
-            ]
+            langCode: 'zh-CN'
         }
     };
+
+    // 显示错误信息
+    function showError(message) {
+        status.textContent = message;
+        status.className = 'status paused';
+    }
+
+    // 禁用所有控件
+    function disableAllControls() {
+        const controls = [
+            textInput, languageSelect, genderSelect, voiceSelect,
+            rateInput, pitchInput, volumeInput, btnPlay, btnPause, btnStop
+        ];
+        controls.forEach(control => {
+            if (control) control.disabled = true;
+        });
+    }
+
+    // 启用控制按钮
+    function updateControlButtons(speaking, paused) {
+        btnPlay.disabled = speaking && !paused;
+        btnPause.disabled = !speaking || paused;
+        btnStop.disabled = !speaking;
+        
+        if (speaking && !paused) {
+            btnPlay.textContent = '继续';
+            btnPlay.querySelector('.icon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+        } else {
+            btnPlay.textContent = '播放';
+            btnPlay.querySelector('.icon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+        }
+    }
 
     // 加载语音列表
     function loadVoices() {
         voices = synth.getVoices();
         
         if (voices.length === 0) {
-            setTimeout(loadVoices, 100);
+            if (!voicesLoaded) {
+                setTimeout(loadVoices, 100);
+            }
             return;
         }
         
+        voicesLoaded = true;
         // 更新语音选择下拉菜单
-        updateVoiceOptions();
+        populateVoiceList();
     }
 
-    // 更新语音选项
-    function updateVoiceOptions() {
-        const selectedLanguage = languageSelect.value;
-        const selectedGender = genderSelect.value;
+    // 填充语音列表
+    function populateVoiceList() {
+        if (!voicesLoaded) return;
         
         // 清空现有选项
         voiceSelect.innerHTML = '';
         
-        // 获取当前语言的预定义语音列表
-        const languageVoiceList = languageVoices[selectedLanguage].voices || [];
+        const selectedLanguage = languageSelect.value;
+        const selectedGender = genderSelect.value;
         
-        // 过滤出浏览器中实际可用的语音
-        const availableVoices = [];
+        // 获取当前语言的语音
+        const langVoices = voices.filter(voice => 
+            voice.lang.startsWith(selectedLanguage) || 
+            (selectedLanguage === 'zh' && voice.lang.startsWith('zh')) ||
+            (selectedLanguage === 'en' && voice.lang.startsWith('en'))
+        );
         
-        for (const voiceName of languageVoiceList) {
-            const voice = voices.find(v => v.name === voiceName || v.voiceURI === voiceName);
-            if (voice) {
-                // 如果指定了性别，检查语音是否符合
-                if (selectedGender === 'any' || 
-                    (selectedGender === 'female' && isFemaleVoice(voice)) ||
-                    (selectedGender === 'male' && isMaleVoice(voice))) {
-                    availableVoices.push(voice);
-                }
-            }
-        }
+        // 按性别过滤
+        const genderVoices = selectedGender === 'any' ? 
+            langVoices : 
+            langVoices.filter(voice => {
+                if (selectedGender === 'female') return isFemaleVoice(voice);
+                if (selectedGender === 'male') return isMaleVoice(voice);
+                return true;
+            });
         
-        // 如果没有找到任何语音，尝试使用浏览器中的任何匹配语言的语音
-        if (availableVoices.length === 0) {
-            const fallbackVoices = voices.filter(voice => 
-                voice.lang.startsWith(selectedLanguage) &&
-                (selectedGender === 'any' || 
-                 (selectedGender === 'female' && isFemaleVoice(voice)) ||
-                 (selectedGender === 'male' && isMaleVoice(voice)))
-            );
-            
-            availableVoices.push(...fallbackVoices);
-        }
+        // 添加默认选项
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'default';
+        defaultOption.textContent = '系统默认语音';
+        voiceSelect.appendChild(defaultOption);
         
-        // 添加选项到下拉菜单
-        if (availableVoices.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No voices available';
-            voiceSelect.appendChild(option);
-        } else {
-            // 添加默认选项
-            const defaultOption = document.createElement('option');
-            defaultOption.value = 'default';
-            defaultOption.textContent = 'Default Voice';
-            voiceSelect.appendChild(defaultOption);
-            
-            // 添加其他可用语音
-            availableVoices.forEach(voice => {
+        // 添加可用语音
+        if (genderVoices.length > 0) {
+            genderVoices.forEach(voice => {
                 const option = document.createElement('option');
                 option.value = voice.name;
                 option.textContent = `${voice.name} (${voice.lang})`;
                 voiceSelect.appendChild(option);
             });
-            
-            // 根据性别选择默认语音
-            let defaultVoiceName;
-            if (selectedGender === 'male') {
-                defaultVoiceName = languageVoices[selectedLanguage].defaultMale;
-            } else {
-                defaultVoiceName = languageVoices[selectedLanguage].defaultFemale;
-            }
-            
-            const defaultVoiceObj = availableVoices.find(v => v.name === defaultVoiceName);
-            if (defaultVoiceObj) {
-                voiceSelect.value = defaultVoiceObj.name;
-            } else if (availableVoices.length > 0) {
-                voiceSelect.value = availableVoices[0].name;
-            }
+        } else {
+            // 如果没有匹配的语音，显示提示
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = '未找到匹配的语音';
+            voiceSelect.appendChild(option);
+        }
+        
+        // 尝试选择默认语音
+        trySelectDefaultVoice(selectedLanguage, selectedGender);
+    }
+
+    // 尝试选择默认语音
+    function trySelectDefaultVoice(language, gender) {
+        const defaultVoiceName = languageVoices[language][gender === 'male' ? 'defaultMale' : 'defaultFemale'];
+        const defaultVoice = voices.find(voice => voice.name === defaultVoiceName);
+        
+        if (defaultVoice) {
+            voiceSelect.value = defaultVoiceName;
+        } else if (voiceSelect.options.length > 1) {
+            voiceSelect.selectedIndex = 1; // 选择第一个可用语音
         }
     }
 
-    // 判断是否为女性语音（基于名称的简单启发式方法）
+    // 判断是否为女性语音
     function isFemaleVoice(voice) {
-        const name = voice.name.toLowerCase();
-        const lang = voice.lang.toLowerCase();
-        
-        // 英文女性语音特征
-        if (lang.includes('en')) {
-            return name.includes('female') || 
-                   name.includes('woman') || 
-                   name.includes('girl') ||
-                   name.includes('zira') ||
-                   name.includes('samantha') ||
-                   name.includes('karen') ||
-                   name.includes('moira') ||
-                   name.includes('tessa') ||
-                   name.includes('victoria') ||
-                   name.includes('veena');
-        }
-        
-        // 中文女性语音特征
-        if (lang.includes('zh')) {
-            return name.includes('female') || 
-                   name.includes('woman') || 
-                   name.includes('girl') ||
-                   name.includes('hui') ||
-                   name.includes('yao') ||
-                   name.includes('ting') ||
-                   name.includes('lin') ||
-                   name.includes('mei') ||
-                   name.includes('li') ||
-                   name.includes('女');
-        }
-        
-        return false;
+        const femaleKeywords = [
+            'female', 'woman', 'girl', 'zira', 'samantha', 'karen', 'moira', 
+            'tessa', 'victoria', 'veena', 'hui', 'yao', 'ting', 'lin', 'mei', 'li',
+            'female', 'woman', 'girl', '女'
+        ];
+        return containsAny(voice.name.toLowerCase(), femaleKeywords) || 
+               containsAny(voice.voiceURI.toLowerCase(), femaleKeywords);
     }
 
-    // 判断是否为男性语音（基于名称的简单启发式方法）
+    // 判断是否为男性语音
     function isMaleVoice(voice) {
-        const name = voice.name.toLowerCase();
-        const lang = voice.lang.toLowerCase();
-        
-        // 英文男性语音特征
-        if (lang.includes('en')) {
-            return name.includes('male') || 
-                   name.includes('man') || 
-                   name.includes('boy') ||
-                   name.includes('david') ||
-                   name.includes('alex') ||
-                   name.includes('daniel') ||
-                   name.includes('tom') ||
-                   name.includes('paul') ||
-                   name.includes('mark');
-        }
-        
-        // 中文男性语音特征
-        if (lang.includes('zh')) {
-            return name.includes('male') || 
-                   name.includes('man') || 
-                   name.includes('boy') ||
-                   name.includes('kang') ||
-                   name.includes('gang') ||
-                   name.includes('强') ||
-                   name.includes('刚') ||
-                   name.includes('勇') ||
-                   name.includes('男');
-        }
-        
-        return false;
+        const maleKeywords = [
+            'male', 'man', 'boy', 'david', 'alex', 'daniel', 'tom', 'paul', 
+            'mark', 'kang', 'gang', '强', '刚', '勇', '男',
+            'male', 'man', 'boy'
+        ];
+        return containsAny(voice.name.toLowerCase(), maleKeywords) || 
+               containsAny(voice.voiceURI.toLowerCase(), maleKeywords);
+    }
+
+    // 辅助函数：检查字符串是否包含数组中的任何元素
+    function containsAny(str, items) {
+        return items.some(item => str.includes(item));
     }
 
     // 语音加载处理
@@ -238,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 事件监听器
     languageSelect.addEventListener('change', function() {
-        updateVoiceOptions();
+        populateVoiceList();
         
         // 根据选择的语言更新示例文本
         if (this.value === 'zh') {
@@ -248,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    genderSelect.addEventListener('change', updateVoiceOptions);
+    genderSelect.addEventListener('change', populateVoiceList);
     
     rateInput.addEventListener('input', () => {
         rateValue.textContent = rateInput.value;
@@ -265,83 +220,73 @@ document.addEventListener('DOMContentLoaded', function() {
     // 播放语音
     btnPlay.addEventListener('click', () => {
         // 在某些浏览器中，需要用户交互后才能播放语音
-        if (synth.speaking) {
+        if (synth.speaking && synth.paused) {
             synth.resume();
             status.textContent = '继续播放';
             status.className = 'status speaking';
-            btnPause.disabled = false;
-            btnPlay.disabled = true;
+            updateControlButtons(true, false);
             return;
         }
 
-        if (textInput.value !== '') {
-            utterance = new SpeechSynthesisUtterance(textInput.value);
-            
-            // 获取选中的语音
-            let selectedVoice = null;
-            if (voiceSelect.value === 'default') {
-                // 使用默认语音
-                const defaultVoiceName = genderSelect.value === 'male' ? 
-                    languageVoices[languageSelect.value].defaultMale : 
-                    languageVoices[languageSelect.value].defaultFemale;
-                
-                selectedVoice = voices.find(v => v.name === defaultVoiceName);
-            } else {
-                // 使用用户选择的语音
-                selectedVoice = voices.find(v => v.name === voiceSelect.value);
-            }
-            
-            // 如果找到了语音，使用它；否则使用系统默认语音
+        if (synth.speaking) {
+            return; // 已经在播放中
+        }
+
+        if (textInput.value.trim() === '') {
+            showError('请输入要转换的文本');
+            return;
+        }
+
+        utterance = new SpeechSynthesisUtterance(textInput.value);
+        
+        // 设置语音参数
+        utterance.rate = parseFloat(rateInput.value);
+        utterance.pitch = parseFloat(pitchInput.value);
+        utterance.volume = parseFloat(volumeInput.value);
+        
+        // 设置语言
+        const langConfig = languageVoices[languageSelect.value];
+        utterance.lang = langConfig ? langConfig.langCode : languageSelect.value;
+        
+        // 设置语音（如果用户选择了特定语音）
+        if (voiceSelect.value !== 'default') {
+            const selectedVoice = voices.find(voice => voice.name === voiceSelect.value);
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
                 utterance.lang = selectedVoice.lang;
-            } else {
-                // 设置默认语言
-                utterance.lang = languageSelect.value === 'zh' ? 'zh-CN' : 'en-US';
             }
+        }
+        
+        utterance.onstart = function() {
+            status.textContent = '正在播放...';
+            status.className = 'status speaking';
+            updateControlButtons(true, false);
+        };
+        
+        utterance.onend = function() {
+            status.textContent = '播放完成';
+            status.className = 'status';
+            updateControlButtons(false, false);
+        };
+        
+        utterance.onerror = function(event) {
+            console.error('Speech synthesis error:', event);
+            showError('播放出错: ' + event.error);
+            updateControlButtons(false, false);
             
-            utterance.rate = parseFloat(rateInput.value);
-            utterance.pitch = parseFloat(pitchInput.value);
-            utterance.volume = parseFloat(volumeInput.value);
+            // 显示浏览器支持提示
+            browserSupport.classList.remove('hidden');
+        };
+        
+        try {
+            synth.speak(utterance);
+            updateControlButtons(true, false);
+        } catch (error) {
+            console.error('Error speaking:', error);
+            showError('播放失败: ' + error.message);
             
-            utterance.onstart = function() {
-                status.textContent = '正在播放...';
-                status.className = 'status speaking';
-                btnPause.disabled = false;
-                btnStop.disabled = false;
-                btnPlay.disabled = true;
-            };
-            
-            utterance.onend = function() {
-                status.textContent = '播放完成';
-                status.className = 'status';
-                btnPause.disabled = true;
-                btnStop.disabled = true;
-                btnPlay.disabled = false;
-            };
-            
-            utterance.onerror = function(event) {
-                console.error('Speech synthesis error:', event);
-                status.textContent = '播放出错: ' + event.error;
-                status.className = 'status paused';
-                btnPause.disabled = true;
-                btnStop.disabled = true;
-                btnPlay.disabled = false;
-                
-                // 显示浏览器支持提示
-                browserSupport.classList.remove('hidden');
-            };
-            
-            try {
-                synth.speak(utterance);
-            } catch (error) {
-                console.error('Error speaking:', error);
-                status.textContent = '播放失败: ' + error.message;
-                status.className = 'status paused';
-                
-                // 显示浏览器支持提示
-                browserSupport.classList.remove('hidden');
-            }
+            // 显示浏览器支持提示
+            browserSupport.classList.remove('hidden');
         }
     });
 
@@ -351,8 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             synth.pause();
             status.textContent = '已暂停';
             status.className = 'status paused';
-            btnPause.disabled = true;
-            btnPlay.disabled = false;
+            updateControlButtons(true, true);
         }
     });
 
@@ -362,24 +306,28 @@ document.addEventListener('DOMContentLoaded', function() {
             synth.cancel();
             status.textContent = '已停止';
             status.className = 'status';
-            btnPause.disabled = true;
-            btnStop.disabled = true;
-            btnPlay.disabled = false;
+            updateControlButtons(false, false);
         }
     });
 
     // 添加页面点击事件处理，以激活语音合成
-    document.body.addEventListener('click', function() {
+    document.addEventListener('click', function initSpeech() {
         // 尝试播放一个非常简短的无声语音来激活API
         if (synth && !synth.speaking) {
             try {
                 const testUtterance = new SpeechSynthesisUtterance('');
                 testUtterance.volume = 0;
                 synth.speak(testUtterance);
-                synth.cancel(); // 立即取消
+                setTimeout(() => synth.cancel(), 10); // 立即取消
             } catch (error) {
                 console.log('Test utterance failed:', error);
             }
         }
-    }, { once: true }); // 只执行一次
+        
+        // 移除事件监听器，只需要执行一次
+        document.removeEventListener('click', initSpeech);
+    });
+
+    // 初始化控制按钮状态
+    updateControlButtons(false, false);
 });

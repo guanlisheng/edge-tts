@@ -225,3 +225,55 @@ footer {
         max-width: 250px;
     }
 }
+
+/* 添加加载动画 */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading {
+    animation: pulse 1.5s infinite;
+}
+
+/* 为语音选择下拉框添加样式 */
+#voice-select {
+    min-height: 42px;
+}
+
+/* 添加响应式调整 */
+@media (max-width: 768px) {
+    .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+}
+
+/* 为禁用状态添加更明显的视觉提示 */
+button:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 增强状态提示的视觉效果 */
+.status {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+/* 错误状态样式 */
+.error {
+    background-color: rgba(247, 37, 133, 0.2);
+    color: var(--warning-color);
+}
+
